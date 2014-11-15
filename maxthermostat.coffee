@@ -109,6 +109,7 @@ module.exports = (env) ->
       @id = @config.id
       @name = @config.name
       @_settemperature = @config.actTemp
+      @_mode = @config.mode
 
       plugin.mc.on("update", (data) =>
         data = data[@config.deviceNo]
@@ -147,7 +148,7 @@ module.exports = (env) ->
         
     changeTemperatureTo: (temperature) ->
       if @settemperature is temperature then return
-      return plugin.setTemperature(@config.deviceNo, @config.mode, temperature)
+      return plugin.setTemperature(@config.deviceNo, @_mode, temperature)
 
   class MaxContactSensor extends env.devices.ContactSensor
 

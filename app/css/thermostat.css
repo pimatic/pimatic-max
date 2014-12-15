@@ -49,3 +49,7 @@
 #index li.maxthermodevice.unsynced{
   color: gray !important;
 }
+
+#index li.maxthermodevice div.controls .ui-controlgroup-horizontal{
+	height: 34px;
+}

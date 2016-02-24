@@ -46,7 +46,7 @@ Set the `class` attribute to `MaxHeatingThermostat`. For example:
   "name": "Bathroom Radiator left",
   "rfAddress": "12345cf",
   "comfyTemp": 23.0,
-  "ecoTemp": 17.5,
+  "ecoTemp": 17.5
 }
 ```
 

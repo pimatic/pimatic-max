@@ -41,13 +41,29 @@ Set the `class` attribute to `MaxHeatingThermostat`. For example:
 
 ```json
 { 
-  "id": "bathroomLeft",
+  "id": "BathroomHeatingThermostat",
   "class": "MaxHeatingThermostat", 
-  "name": "Bathroom Radiator left",
+  "name": "Bathroom Radiator",
   "rfAddress": "12345cf",
   "comfyTemp": 23.0,
   "ecoTemp": 17.5,
-}
+},
+```
+The MaxWallThermostat device can be used to get the actual temperature from a MaxHeatingThermostat device.
+
+1. MAX Wall Thermostats actual temperature (maybe more precise due location)
+
+2. MAX Heating Thermostats actual temperature
+
+Both MaxWallThermostat and MaxHeatingThermostat devices rfAddress can be used for actual temperature info:
+
+```json
+    {
+      "id": "BathroomThermostat",
+      "class": "MaxWallThermostat",
+      "name": "Bathroom Wall or Heat Thermostat",
+      "rfAddress": "12345cf"
+    },
 ```
 
 For contact sensors add this config:
@@ -58,5 +74,5 @@ For contact sensors add this config:
   "class": "MaxContactSensor", 
   "name": "Bathroom Window",
   "rfAddress": "12345df"
-}
+},
 ```

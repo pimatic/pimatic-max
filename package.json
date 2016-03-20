@@ -11,9 +11,11 @@
     "maxthermostat.coffee",
     "README.md",
     "maxthermostat-config-schema.coffee",
-    "device-config-schema.coffee"
+    "device-config-schema.coffee",
+    "LICENSE"
   ],
   "version": "0.8.14",
+  "license": "GPL-2.0",
   "homepage": "http://github.com/pimatic/pimatic-max",
   "repository": {
     "type": "git",
@@ -23,7 +25,7 @@
     "max-control": "git+https://github.com/sweetpi/max-control"
   },
   "peerDependencies": {
-    "pimatic": "0.8.* && >=0.8.31"
+    "pimatic": ">=0.8.31 <1.0.0"
   },
   "configSchema": "maxthermostat-config-schema.coffee",
   "engines": {

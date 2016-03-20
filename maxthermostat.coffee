@@ -22,7 +22,7 @@ module.exports = (env) ->
         )
         @mc.once('error', reject)
         return
-      ).timeout(60000).catch( (error) ->
+      ).catch( (error) ->
         env.logger.error "Error on connecting to max cube: #{error.message}"
         env.logger.debug error.stack
         return
@@ -36,11 +36,15 @@ module.exports = (env) ->
       @mc.on("update", (data) =>
         if @config.debug
           env.logger.debug "got update", data
+        @_lastAction = settled(@_lastAction)
       )
 
+      lastError = null
       @mc.on('error', (error) =>
-        env.logger.error "connection error: #{error}"
-        env.logger.debug error.stack
+        if not lastError? or lastError isnt error.message
+          env.logger.error "connection error: #{error}"
+          env.logger.debug error.stack
+        lastError = error.message
       )
 
       deviceConfigDef = require("./device-config-schema")
@@ -63,6 +67,15 @@ module.exports = (env) ->
         configDef: deviceConfigDef.MaxCube,
         createCallback: (config, lastState) -> new MaxCube(config, lastState)
       })
+
+    isWindowOpen: (rfAddress) ->
+      @_lastAction = settled(@_lastAction).then( =>
+        device = @mc.devices[rfAddress]
+        unless device?
+          return null
+        return !@mc.allWindowsClosed(device.roomId)
+      )
+      return @_lastAction
 
     setTemperatureSetpoint: (rfAddress, mode, value) ->
       @_lastAction = settled(@_lastAction).then( => 
@@ -87,26 +100,48 @@ module.exports = (env) ->
         data = data[@config.rfAddress]
         if data?
           now = new Date().getTime()
-          ###
-          Give the cube some time to handle the changes. If we send new values to the cube
-          we set _lastSendTime to the current time. We consider the values as succesfull set, when
-          the command was not rejected. But the updates comming from the cube in the next 30
-          seconds do not always reflect the updated values, therefore we ignoring the old values
-          we got by the update message for 30 seconds. 
+          unless @_tempToSetIfWindowClosed?
+            ###
+            Give the cube some time to handle the changes. If we send new values to the cube
+            we set _lastSendTime to the current time. We consider the values as succesfull set, when
+            the command was not rejected. But the updates comming from the cube in the next 30
+            seconds do not always reflect the updated values, therefore we ignoring the old values
+            we got by the update message for 30 seconds. 
 
-          In the case that the cube did not react to our the send commands, the values will be 
-          overwritten with the internal state (old ones) of the cube after 30 seconds, because
-          the update event is emitted by max-control periodically.
-          ###
-          if now - @_lastSendTime < 30*1000
-            # only if values match, we are synced
-            if data.setpoint is @_temperatureSetpoint and data.mode is @_mode
+            In the case that the cube did not react to our the send commands, the values will be 
+            overwritten with the internal state (old ones) of the cube after 30 seconds, because
+            the update event is emitted by max-control periodically.
+            ###
+            if now - @_lastSendTime < 30*1000
+              # only if values match, we are synced
+              if data.setpoint is @_temperatureSetpoint and data.mode is @_mode
+                @_setSynced(true)
+            else
+              # more then 30 seconds passed, set the values anyway
+              @_setSetpoint(data.setpoint)
+              @_setMode(data.mode)
               @_setSynced(true)
           else
-            # more then 30 seconds passed, set the values anyway
-            @_setSetpoint(data.setpoint)
-            @_setMode(data.mode)
-            @_setSynced(true)
+            plugin.isWindowOpen(@config.rfAddress).then( (windowOpen) =>
+              if windowOpen
+                @_setSetpoint(data.setpoint)
+                @_setMode(data.mode)
+              else
+                if plugin.config.debug
+                  env.logger.debug("All windows closed, setting saved temperature")
+                tempToSet = @_tempToSetIfWindowClosed
+                @_tempToSetIfWindowClosed = undefined
+                return plugin.setTemperatureSetpoint(
+                  @config.rfAddress, @_mode, tempToSet
+                ).then( () =>
+                  @_lastSendTime = new Date().getTime()
+                  @_setSynced(false)
+                  @_setSetpoint(tempToSet)
+                )
+            ).catch( (err) =>
+              env.logger.error("Error setting temp after window was closed: #{err.message}")
+              env.logger.debug(err)
+            )
           @_setValve(data.valve)
           @_setBattery(data.battery)
         return
@@ -122,14 +157,26 @@ module.exports = (env) ->
         @_setSynced(false)
         @_setMode(mode)
       )
-        
+
     changeTemperatureTo: (temperatureSetpoint) ->
       if @temperatureSetpoint is temperatureSetpoint then return
-      return plugin.setTemperatureSetpoint(@config.rfAddress, @_mode, temperatureSetpoint).then( =>
-        @_lastSendTime = new Date().getTime()
-        @_setSynced(false)
-        @_setSetpoint(temperatureSetpoint)
+      return plugin.isWindowOpen(@config.rfAddress).then( (windowOpen) => 
+        if windowOpen
+          env.logger.debug("A window is open waiting till window is closed") if plugin.config.debug
+          @_setSynced(false)
+          @_tempToSetIfWindowClosed = temperatureSetpoint
+          @_lastSendTime = new Date().getTime()
+          return
+        else
+          return plugin.setTemperatureSetpoint(
+            @config.rfAddress, @_mode, temperatureSetpoint
+          ).then( =>
+            @_lastSendTime = new Date().getTime()
+            @_setSynced(false)
+            @_setSetpoint(temperatureSetpoint)
+          )
       )
+
 
   class MaxWallThermostat extends env.devices.TemperatureSensor
     _temperature: null

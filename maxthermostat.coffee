@@ -159,7 +159,7 @@ module.exports = (env) ->
       )
 
     changeTemperatureTo: (temperatureSetpoint) ->
-      if @temperatureSetpoint is temperatureSetpoint then return
+      if @_temperatureSetpoint is temperatureSetpoint then return Promise.resolve()
       return plugin.isWindowOpen(@config.rfAddress).then( (windowOpen) => 
         if windowOpen
           env.logger.debug("A window is open waiting till window is closed") if plugin.config.debug

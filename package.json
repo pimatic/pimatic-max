@@ -22,7 +22,7 @@
     "url": "git://github.com/pimatic/pimatic-max.git"
   },
   "dependencies": {
-    "max-control": "git+https://github.com/sweetpi/max-control"
+    "max-control": "git+https://github.com/sweetpi/max-control#606298afda1319a9fab8d257fca0b394d0ffa9c5"
   },
   "peerDependencies": {
     "pimatic": ">=0.8.31 <1.0.0"

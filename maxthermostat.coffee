@@ -1,11 +1,8 @@
 module.exports = (env) ->
 
   Promise = env.require 'bluebird'
-  assert = env.require 'cassert'
-  _ = env.require 'lodash'
   MaxCubeConnection = require 'max-control'
   Promise.promisifyAll(MaxCubeConnection.prototype)
-  M = env.matcher
   settled = (promise) -> Promise.settle([promise])
 
   class MaxThermostat extends env.plugins.Plugin
@@ -103,8 +100,8 @@ module.exports = (env) ->
           unless @_tempToSetIfWindowClosed?
             ###
             Give the cube some time to handle the changes. If we send new values to the cube
-            we set _lastSendTime to the current time. We consider the values as succesfull set, when
-            the command was not rejected. But the updates comming from the cube in the next 30
+            we set _lastSendTime to the current time. We consider the values as successfully set, when
+            the command was not rejected. But the updates received from the cube in the next 30
             seconds do not always reflect the updated values, therefore we ignoring the old values
             we got by the update message for 30 seconds. 
 

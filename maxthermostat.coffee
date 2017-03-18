@@ -93,7 +93,7 @@ module.exports = (env) ->
       @_battery = lastState?.battery?.value or "ok"
       @_lastSendTime = 0
 
-      plugin.mc.on("update", (data) =>
+      @updateEventHandler = ((data) =>
         data = data[@config.rfAddress]
         if data?
           now = new Date().getTime()
@@ -143,6 +143,11 @@ module.exports = (env) ->
           @_setBattery(data.battery)
         return
       )
+      plugin.mc.on("update", @updateEventHandler)
+      super()
+
+    destroy: () ->
+      plugin.mc.removeListener("update", @updateEventHandler)
       super()
 
     changeModeTo: (mode) ->
@@ -182,14 +187,19 @@ module.exports = (env) ->
       @id = @config.id
       @name = @config.name
       @_temperature = lastState?.temperature?.value
-      super()
-      
-      plugin.mc.on("update", (data) =>
+
+      @updateEventHandler = (data) =>
         data = data[@config.rfAddress]
         if data?.actualTemperature?
           @_temperature = data.actualTemperature
           @emit 'temperature', @_temperature
-      )
+
+      plugin.mc.on("update", @updateEventHandler)
+      super()
+
+    destroy: () ->
+      plugin.mc.removeListener("update", @updateEventHandler)
+      super()
 
     getTemperature: -> Promise.resolve(@_temperature)
 
@@ -200,12 +210,17 @@ module.exports = (env) ->
       @name = @config.name
       @_contact = lastState?.contact?.value
 
-      plugin.mc.on("update", (data) =>
+      @updateEventHandler = (data) =>
         data = data[@config.rfAddress]
         if data?
           @_setContact(data.state is 'closed')
         return
-      )
+
+      plugin.mc.on("update", @updateEventHandler)
+      super()
+
+    destroy: () ->
+      plugin.mc.removeListener("update", @updateEventHandler)
       super()
 
   class MaxCube extends env.devices.Sensor
@@ -228,10 +243,15 @@ module.exports = (env) ->
       @_dutycycle = plugin.mc.dutyCycle
       @_memoryslots = plugin.mc.memorySlots
 
-      plugin.mc.on("status", (info) =>
+      @statusEventHandler = (info) =>
         @emit 'dutycycle', info.dutyCycle
         @emit 'memoryslots', info.memorySlots
-      )
+
+      plugin.mc.on("status", @statusEventHandler)
+      super()
+
+    destroy: () ->
+      plugin.mc.removeListener("status", @statusEventHandler)
       super()
 
     getDutycycle: -> Promise.resolve(@_dutycycle)

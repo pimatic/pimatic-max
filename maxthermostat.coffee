@@ -205,15 +205,36 @@ module.exports = (env) ->
 
   class MaxContactSensor extends env.devices.ContactSensor
 
+    attributes:
+      battery:
+        description: "Battery status"
+        type: "string"
+        enum: ["ok", "low"]
+        icon:
+          noText: true
+          mapping: {
+              'icon-battery-filled': true
+              'icon-battery-empty': false
+          }
+      contact:
+        description: "State of the contact"
+        type: "boolean"
+        labels: ['closed', 'opened']
+        
+    _battery: null
+    _contact: undefined
+
     constructor: (@config, lastState) ->
       @id = @config.id
       @name = @config.name
       @_contact = lastState?.contact?.value
+      @_battery = lastState?.battery?.value or "ok"
 
       @updateEventHandler = (data) =>
         data = data[@config.rfAddress]
         if data?
           @_setContact(data.state is 'closed')
+          @_setBattery(data.battery)
         return
 
       plugin.mc.on("update", @updateEventHandler)
@@ -222,6 +243,14 @@ module.exports = (env) ->
     destroy: () ->
       plugin.mc.removeListener("update", @updateEventHandler)
       super()
+      
+    getBattery: () -> Promise.resolve(@_battery)
+    getCOntact: () -> Promise.resolve(@_contact)
+    
+    _setBattery: (battery) ->
+      if battery is @_battery then return
+      @_battery = battery
+      @emit "battery", @_battery
 
   class MaxCube extends env.devices.Sensor
 

@@ -208,12 +208,14 @@ module.exports = (env) ->
     constructor: (@config, lastState) ->
       @id = @config.id
       @name = @config.name
+      @_battery = lastState?.battery?.value or "ok"
       @_contact = lastState?.contact?.value
 
       @updateEventHandler = (data) =>
         data = data[@config.rfAddress]
         if data?
           @_setContact(data.state is 'closed')
+          @_setBattery(data.battery)
         return
 
       plugin.mc.on("update", @updateEventHandler)

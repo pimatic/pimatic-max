@@ -204,6 +204,17 @@ module.exports = (env) ->
     getTemperature: -> Promise.resolve(@_temperature)
 
   class MaxContactSensor extends env.devices.ContactSensor
+    attributes:
+      contact:
+        description: "State of the contact"
+        type: t.boolean
+        labels: ['closed', 'opened']
+      battery:
+        description: "Battery status"
+        type: "string"
+        enum: ["ok", "low"]
+
+    _battery: null
 
     constructor: (@config, lastState) ->
       @id = @config.id
@@ -224,6 +235,13 @@ module.exports = (env) ->
     destroy: () ->
       plugin.mc.removeListener("update", @updateEventHandler)
       super()
+
+    _setBattery: (battery) ->
+      if battery is @_battery then return
+      @_battery = battery
+      @emit "battery", @_battery
+
+    getBattery: () -> Promise.resolve(@_battery)
 
   class MaxCube extends env.devices.Sensor
 

@@ -2,6 +2,7 @@ module.exports = {
   title: "max-thermostat device config schemas"
   MaxHeatingThermostat: {
     title: "MaxHeatingThermostat config options"
+    extensions: ["xAttributeOptions"]
     type: "object"
     properties:
       rfAddress:
@@ -39,7 +40,7 @@ module.exports = {
   }
   MaxContactSensor: {
     title: "MaxContactSensor config options"
-    extensions: ["xClosedLabel", "xOpenedLabel"]
+    extensions: ["xClosedLabel", "xOpenedLabel", "xAttributeOptions"]
     type: "object"
     properties:
       rfAddress:
@@ -49,6 +50,7 @@ module.exports = {
   }
   MaxWallThermostat: {
     title: "MaxWallThermostat config options"
+    extensions: ["xAttributeOptions"]
     type: "object"
     properties:
       rfAddress:
